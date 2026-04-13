@@ -141,9 +141,10 @@ class SendLocator {
   }
 
   static void registerBlocs(GetIt locator) {
-    locator.registerFactoryParam<SendCubit, Wallet?, void>(
-      (wallet, _) => SendCubit(
+    locator.registerFactoryParam<SendCubit, Wallet?, String?>(
+      (wallet, initialAddress) => SendCubit(
         wallet: wallet,
+        initialAddress: initialAddress,
         bestWalletUsecase: locator<SelectBestWalletUsecase>(),
         detectBitcoinStringUsecase: locator<DetectBitcoinStringUsecase>(),
         getSettingsUsecase: locator<GetSettingsUsecase>(),

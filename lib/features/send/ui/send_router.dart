@@ -21,14 +21,25 @@ class SendRouter {
     name: SendRoute.send.name,
     path: SendRoute.send.path,
     builder: (context, state) {
-      // Pass a preselected wallet to the send bloc if one is set in the URI
-      //  of the incoming route
-      final wallet = state.extra is Wallet ? state.extra! as Wallet : null;
+      // Support both:
+      // 1. Wallet only (existing): extra: wallet
+      // 2. Wallet + address (new): extra: (wallet: w, address: addr)
+      Wallet? wallet;
+      String? initialAddress;
+
+      if (state.extra is Wallet) {
+        wallet = state.extra! as Wallet;
+      } else if (state.extra is ({Wallet? wallet, String? address})) {
+        final params =
+            state.extra! as ({Wallet? wallet, String? address});
+        wallet = params.wallet;
+        initialAddress = params.address;
+      }
+
       return BlocProvider(
-        create:
-            (_) =>
-                locator<SendCubit>(param1: wallet)
-                  ..loadWalletWithRatesAndFees(),
+        create: (_) =>
+            locator<SendCubit>(param1: wallet, param2: initialAddress)
+              ..loadWalletWithRatesAndFees(),
         child: const SendScreen(),
       );
     },

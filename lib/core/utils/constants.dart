@@ -101,6 +101,12 @@ class ApiServiceConstants {
   static String bbKycTestUrl = 'https://bbx05.bullbitcoin.dev/kyc';
   static String googleDriveClientId =
       dotenv.env['GOOGLE_DRIVE_CLIENT_ID'] ?? '';
+
+  // Bringin Connect
+  static String bringinApiKey = dotenv.env['BRINGIN_API_KEY'] ?? '';
+  static String bringinConnectUrl =
+      dotenv.env['BRINGIN_CONNECT_URL'] ?? 'https://connect.bringin.xyz';
+  static String bringinConnectSandboxUrl = 'https://dev-connect.bringin.xyz';
 }
 
 class LocatorInstanceNameConstants {

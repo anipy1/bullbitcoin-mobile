@@ -47,6 +47,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class SendCubit extends Cubit<SendState> {
   SendCubit({
     Wallet? wallet,
+    String? initialAddress,
     required SelectBestWalletUsecase bestWalletUsecase,
     required DetectBitcoinStringUsecase detectBitcoinStringUsecase,
     required GetSettingsUsecase getSettingsUsecase,
@@ -80,6 +81,7 @@ class SendCubit extends Cubit<SendState> {
     required UpdateSendSwapLockupFeesUsecase updateSendSwapLockupFeesUsecase,
     required VerifyChainSwapAmountSendUsecase verifyChainSwapAmountSendUsecase,
   }) : _wallet = wallet,
+       _initialAddress = initialAddress,
        _getSettingsUsecase = getSettingsUsecase,
        _convertSatsToCurrencyAmountUsecase = convertSatsToCurrencyAmountUsecase,
        _getAvailableCurrenciesUsecase = getAvailableCurrenciesUsecase,
@@ -114,6 +116,7 @@ class SendCubit extends Cubit<SendState> {
 
   // ignore: unused_field
   final Wallet? _wallet;
+  final String? _initialAddress;
   final SelectBestWalletUsecase _bestWalletUsecase;
   final DetectBitcoinStringUsecase _detectBitcoinStringUsecase;
   final GetAvailableCurrenciesUsecase _getAvailableCurrenciesUsecase;
@@ -194,6 +197,12 @@ class SendCubit extends Cubit<SendState> {
       await getCurrencies();
       await getExchangeRate();
       await loadFees();
+
+      // Pre-fill address if provided (e.g. from Bringin Sell dashboard)
+      if (_initialAddress != null && _initialAddress!.isNotEmpty) {
+        await onChangedText(_initialAddress!);
+        await continueOnAddressConfirmed();
+      }
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
