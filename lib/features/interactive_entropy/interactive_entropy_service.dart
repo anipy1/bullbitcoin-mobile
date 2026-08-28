@@ -101,6 +101,14 @@ class InteractiveEntropyService extends ChangeNotifier {
 
   bool get isPlaying => phase == EntropyRoundPhase.playing;
 
+  /// Friendly name the game shows next to the PIN (`device connected`);
+  /// localHostname is often just "localhost" on phones.
+  static final String _deviceLabel = Platform.isIOS
+      ? 'iPhone'
+      : Platform.isAndroid
+      ? 'Android phone'
+      : Platform.localHostname;
+
   /// Set while a paired-connection flow is in progress.
   String? _pendingToken;
 
@@ -146,10 +154,7 @@ class InteractiveEntropyService extends ChangeNotifier {
               // Paired flow: request candidacy; the game reveals a PIN.
               ch.sink.add(
                 _codec.encode(
-                  PairRequestMessage(
-                    token: pending,
-                    device: Platform.localHostname,
-                  ),
+                  PairRequestMessage(token: pending, device: _deviceLabel),
                 ),
               );
               phase = EntropyRoundPhase.pinEntry;
@@ -157,9 +162,7 @@ class InteractiveEntropyService extends ChangeNotifier {
             } else {
               phase = EntropyRoundPhase.connected;
               statusText = 'Linked to ${target.replaceFirst('ws://', '')}';
-              ch.sink.add(
-                _codec.encode(HelloMessage(device: Platform.localHostname)),
-              );
+              ch.sink.add(_codec.encode(HelloMessage(device: _deviceLabel)));
               _startAimPreview();
             }
             notifyListeners();
@@ -185,9 +188,7 @@ class InteractiveEntropyService extends ChangeNotifier {
                 phase = EntropyRoundPhase.connected;
                 statusText = 'Paired with the game';
                 // Hello from the paired socket fetches the tune echo.
-                ch.sink.add(
-                  _codec.encode(HelloMessage(device: Platform.localHostname)),
-                );
+                ch.sink.add(_codec.encode(HelloMessage(device: _deviceLabel)));
                 // Live aim from the moment of pairing so the game's tuning
                 // screen gets a preview; entropy recording stays gated on
                 // isPlaying, so none of this motion is captured.
