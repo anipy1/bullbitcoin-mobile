@@ -17,6 +17,9 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     required this._completePhysicalBackupVerificationUsecase,
   }) : super(const OnboardingState()) {
     on<OnboardingCreateNewWallet>(_onCreateNewWallet);
+    on<OnboardingCreateWalletWithInteractiveEntropy>(
+      _onCreateWalletWithInteractiveEntropy,
+    );
     on<OnboardingRecoverWalletClicked>(_onRecoverWalletClicked);
 
     on<OnboardingGoBack>((event, emit) {
@@ -56,6 +59,32 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         ),
       );
       await _createDefaultWalletsUsecase.execute();
+      emit(state.copyWith(onboardingStepStatus: OnboardingStepStatus.success));
+    } catch (e) {
+      await _handleError(e, emit);
+    }
+  }
+
+  Future<void> _onCreateWalletWithInteractiveEntropy(
+    OnboardingCreateWalletWithInteractiveEntropy event,
+    Emitter<OnboardingState> emit,
+  ) async {
+    // Same serialized-event guard as `_onCreateNewWallet` (#2015).
+    if (state.onboardingStepStatus == OnboardingStepStatus.loading) return;
+    try {
+      emit(
+        state.copyWith(
+          onboardingStepStatus: OnboardingStepStatus.loading,
+          step: OnboardingStep.create,
+          statusError: '',
+        ),
+      );
+      // A fresh seed, not a recovery: isNewSeed keeps new-wallet birthday
+      // semantics and the physical-backup flow stays pending as usual.
+      await _createDefaultWalletsUsecase.execute(
+        mnemonicWords: event.words,
+        isNewSeed: true,
+      );
       emit(state.copyWith(onboardingStepStatus: OnboardingStepStatus.success));
     } catch (e) {
       await _handleError(e, emit);

@@ -6,6 +6,7 @@ import 'package:bb_mobile/features/electrum_settings/interface_adapters/presente
 import 'package:bb_mobile/features/onboarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:bb_mobile/features/onboarding/ui/screens/advanced_options.dart';
 import 'package:bb_mobile/features/onboarding/ui/widgets/create_wallet_button.dart';
+import 'package:bb_mobile/features/onboarding/ui/widgets/interactive_entropy_button.dart';
 import 'package:bb_mobile/features/onboarding/ui/widgets/recover_backup_button.dart';
 import 'package:bb_mobile/features/settings/ui/widgets/superuser_tap_unlocker.dart';
 import 'package:bb_mobile/features/tor_settings/presentation/bloc/tor_settings_cubit.dart';
@@ -112,6 +113,8 @@ class _Actions extends StatelessWidget {
           ),
         ] else ...[
           const CreateWalletButton(),
+          const Gap(10),
+          const InteractiveEntropyButton(),
           const Gap(10),
           const RecoverWalletButton(),
           const Gap(16),

@@ -7,11 +7,16 @@ import 'package:bb_mobile/core/widgets/tab_menu_vertical_button.dart';
 import 'package:bb_mobile/core/widgets/text/text.dart';
 import 'package:bb_mobile/features/bitbox/ui/bitbox_router.dart';
 import 'package:bb_mobile/features/bitbox/ui/screens/bitbox_action_screen.dart';
+import 'package:bb_mobile/core/utils/result.dart';
 import 'package:bb_mobile/features/import_coldcard/router.dart';
+import 'package:bb_mobile/features/import_mnemonic/domain/import_mnemonic_failure.dart';
+import 'package:bb_mobile/features/import_mnemonic/domain/import_wallet_usecase.dart';
 import 'package:bb_mobile/features/import_mnemonic/router.dart';
+import 'package:bb_mobile/features/interactive_entropy/interactive_entropy_page.dart';
 import 'package:bb_mobile/features/import_qr_device/router.dart';
 import 'package:bb_mobile/features/import_watch_only_wallet/import_watch_only_router.dart';
 import 'package:bb_mobile/features/ledger/ui/ledger_router.dart';
+import 'package:bb_mobile/locator.dart';
 import 'package:flutter/material.dart';
 import 'package:bull_ui/bull_ui.dart' show Gap;
 import 'package:go_router/go_router.dart';
@@ -46,6 +51,30 @@ class ImportWalletPage extends StatelessWidget {
                 title: context.loc.importWalletImportWatchOnly,
                 onTap: () =>
                     context.pushNamed(ImportWatchOnlyWalletRoutes.import.name),
+              ),
+              const Gap(16),
+              TabMenuVerticalButton(
+                title: 'Interactive entropy',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => InteractiveEntropyPage(
+                      onCreateWallet: (words) async {
+                        final result = await locator<ImportWalletUsecase>()
+                            .execute(
+                              mnemonicWords: words,
+                              label: 'Interactive entropy',
+                            );
+                        return switch (result) {
+                          Ok() => null,
+                          Err(:final failure) =>
+                            failure is ImportMnemonicDuplicateFailure
+                                ? 'A wallet with this seed already exists.'
+                                : 'Failed to create the wallet — try again.',
+                        };
+                      },
+                    ),
+                  ),
+                ),
               ),
               const Gap(24),
               BBText(

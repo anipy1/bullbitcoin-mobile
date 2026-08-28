@@ -22,6 +22,10 @@ class CreateDefaultWalletsUsecase {
   Future<List<Wallet>> execute({
     List<String>? mnemonicWords,
     String? passphrase,
+    // True when [mnemonicWords] is a freshly minted seed (e.g. interactive
+    // entropy) rather than a recovery, so it keeps new-wallet birthday
+    // semantics instead of triggering a full history scan.
+    bool isNewSeed = false,
   }) async {
     try {
       final settings = await _settingsRepository.fetch();
@@ -43,7 +47,7 @@ class CreateDefaultWalletsUsecase {
       final hasLiquid = existing.any((w) => w.network.isLiquid);
       if (hasBitcoin && hasLiquid) return existing;
 
-      final isGenerated = mnemonicWords == null;
+      final isGenerated = mnemonicWords == null || isNewSeed;
       final mnemonic = mnemonicWords ?? _mnemonicGenerator.generate();
       final DateTime? birthday = isGenerated ? DateTime.now().toUtc() : null;
       final seed = await _seedRepository.createFromMnemonic(

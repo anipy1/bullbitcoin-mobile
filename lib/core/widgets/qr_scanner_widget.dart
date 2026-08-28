@@ -9,11 +9,17 @@ class QrScannerWidget extends StatefulWidget {
   final ResolutionPreset resolution;
   final Duration scanDelay;
 
+  /// Fraction of the frame zxing decodes (its default is 0.5, the center
+  /// square). Pass 0 to scan the whole frame, e.g. when the code's size on
+  /// screen is unpredictable.
+  final double cropPercent;
+
   const QrScannerWidget({
     super.key,
     required this.onScanned,
     this.resolution = ResolutionPreset.high,
     this.scanDelay = const Duration(milliseconds: 1000),
+    this.cropPercent = 0.5,
   });
 
   @override
@@ -49,6 +55,7 @@ class _ScannerState extends State<QrScannerWidget> {
           resolution: widget.resolution,
           showGallery: true,
           tryInverted: true,
+          cropPercent: widget.cropPercent,
         ),
 
         // UR Progress Display

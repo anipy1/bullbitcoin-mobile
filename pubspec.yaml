@@ -145,6 +145,12 @@ dependencies:
   web_socket_channel: ^3.0.3
   sentry_flutter: ^9.22.0
   keyboard_actions: ^4.2.1
+  sensors_plus: ^7.1.0
+  shooter_core:
+    git:
+      url: https://github.com/anipy1/entropy_shooter.git
+      ref: main
+      path: packages/shooter_core
 
 dev_dependencies:
   build_runner: ^2.10.4
