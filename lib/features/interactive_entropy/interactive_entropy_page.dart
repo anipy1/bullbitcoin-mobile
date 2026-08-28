@@ -177,11 +177,12 @@ class _ReadyView extends StatelessWidget {
         Center(
           child: BBText(
             'Hold the phone flat like a gun, muzzle at the screen. '
-            'Jerk it back to fire.',
+            'Jerk it back to fire. Your aim is already live, so the game '
+            'can tune sensitivity before you start.',
             style: context.font.labelSmall,
             color: onColor.withValues(alpha: 0.7),
             textAlign: TextAlign.center,
-            maxLines: 3,
+            maxLines: 4,
           ),
         ),
         const Spacer(),

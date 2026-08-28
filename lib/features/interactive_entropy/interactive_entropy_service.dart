@@ -160,6 +160,7 @@ class InteractiveEntropyService extends ChangeNotifier {
               ch.sink.add(
                 _codec.encode(HelloMessage(device: Platform.localHostname)),
               );
+              _startAimPreview();
             }
             notifyListeners();
           })
@@ -187,6 +188,10 @@ class InteractiveEntropyService extends ChangeNotifier {
                 ch.sink.add(
                   _codec.encode(HelloMessage(device: Platform.localHostname)),
                 );
+                // Live aim from the moment of pairing so the game's tuning
+                // screen gets a preview; entropy recording stays gated on
+                // isPlaying, so none of this motion is captured.
+                _startAimPreview();
               } else {
                 pinAttemptsLeft = attemptsLeft;
                 statusText = 'Wrong PIN. $attemptsLeft attempts left';
@@ -224,6 +229,7 @@ class InteractiveEntropyService extends ChangeNotifier {
         statusText = 'Game link lost. Keep moving, entropy still counts';
       case EntropyRoundPhase.connecting:
       case EntropyRoundPhase.connected:
+        _stopAimPreview();
         phase = EntropyRoundPhase.idle;
         statusText = 'Not connected';
       case EntropyRoundPhase.idle:
@@ -239,6 +245,7 @@ class InteractiveEntropyService extends ChangeNotifier {
   /// Back to the connect view (e.g. to rescan after a pairing rejection).
   void resetToIdle() {
     _closeChannel();
+    _stopAimPreview();
     _pendingToken = null;
     pinAttemptsLeft = null;
     phase = EntropyRoundPhase.idle;
@@ -262,11 +269,7 @@ class InteractiveEntropyService extends ChangeNotifier {
     secondsLeft = roundDuration.inSeconds;
     phase = EntropyRoundPhase.playing;
     statusText = 'Round running, shoot!';
-    _startSensors();
-    _sendTimer = Timer.periodic(
-      const Duration(milliseconds: 33),
-      (_) => _sendAim(),
-    );
+    _startAimPreview();
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (secondsLeft > 0) secondsLeft--;
       notifyListeners();
@@ -276,6 +279,27 @@ class InteractiveEntropyService extends ChangeNotifier {
   }
 
   void recenter() => _aim.calibrate(_lastAx, _lastAy, _lastAz);
+
+  /// Sensors + 30 Hz aim uplink. Used both for the round itself and for
+  /// the paired pre-round preview that drives the game's tuning screen.
+  void _startAimPreview() {
+    _startSensors();
+    _sendTimer?.cancel();
+    _sendTimer = Timer.periodic(
+      const Duration(milliseconds: 33),
+      (_) => _sendAim(),
+    );
+  }
+
+  /// Stops the preview stream; a running round keeps its sensors (the
+  /// entropy capture continues headless when the link drops).
+  void _stopAimPreview() {
+    if (isPlaying) return;
+    _accelSub?.cancel();
+    _accelSub = null;
+    _gyroSub?.cancel();
+    _gyroSub = null;
+  }
 
   void _startSensors() {
     _accelSub ??=
