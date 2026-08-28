@@ -211,24 +211,29 @@ class InteractiveEntropyService extends ChangeNotifier {
   }
 
   void _onLinkLost() {
-    final wasPairing = phase == EntropyRoundPhase.pinEntry;
     _closeChannel();
     // Losing the game mid-round doesn't invalidate the entropy (the game
     // never contributes any); the round simply continues headless.
-    if (wasPairing) {
-      // Session rejected/renewed on the game side: rescan.
-      _pendingToken = null;
-      phase = EntropyRoundPhase.failed;
-      statusText = 'Pairing rejected. Scan the QR code again';
-      notifyListeners();
-    } else if (!isPlaying) {
-      phase = EntropyRoundPhase.idle;
-      statusText = 'Not connected';
-      notifyListeners();
-    } else {
-      statusText = 'Game link lost. Keep moving, entropy still counts';
-      notifyListeners();
+    switch (phase) {
+      case EntropyRoundPhase.pinEntry:
+        // Session rejected/renewed on the game side: rescan.
+        _pendingToken = null;
+        phase = EntropyRoundPhase.failed;
+        statusText = 'Pairing rejected. Scan the QR code again';
+      case EntropyRoundPhase.playing:
+        statusText = 'Game link lost. Keep moving, entropy still counts';
+      case EntropyRoundPhase.connecting:
+      case EntropyRoundPhase.connected:
+        phase = EntropyRoundPhase.idle;
+        statusText = 'Not connected';
+      case EntropyRoundPhase.idle:
+      case EntropyRoundPhase.failed:
+      case EntropyRoundPhase.done:
+        // Terminal or already reset: the link no longer matters, and the
+        // results screen must never be stomped by a late socket event.
+        return;
     }
+    notifyListeners();
   }
 
   /// Back to the connect view (e.g. to rescan after a pairing rejection).
@@ -393,14 +398,20 @@ class InteractiveEntropyService extends ChangeNotifier {
     statusText =
         'Entropy captured ($samplesCollected samples, '
         '$shotsFired shots, motion σ ${stdDev.toStringAsFixed(2)} G)';
+    // The gun's job is done: closing the link tells the game the run is
+    // over so it can roll its results screen.
+    _closeChannel();
     notifyListeners();
   }
 
   void _closeChannel() {
     _sendTimer?.cancel();
     _sendTimer = null;
-    _channel?.sink.close();
+    // Null before closing so no in-flight done/error event from this
+    // channel can pass the identical() guards.
+    final ch = _channel;
     _channel = null;
+    ch?.sink.close();
   }
 
   @override
